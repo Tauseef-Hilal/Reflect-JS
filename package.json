@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/Tauseef-Hilal/Reflect-JS#readme",
   "dependencies": {
+    "@discordjs/rest": "^1.0.1",
     "discord.js": "^14.0.3",
     "dotenv": "^16.0.1"
   }

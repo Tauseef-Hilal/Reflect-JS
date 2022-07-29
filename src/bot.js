@@ -1,13 +1,18 @@
 import { EmbedBuilder } from "@discordjs/builders";
-import { Client, Colors, Message } from "discord.js";
+import { Client, Collection, Colors, CommandInteraction, Message } from "discord.js";
+import { Cog } from "./utils/cog.js";
 
-export class Reflect extends Client {
+export class Bot extends Client {
     constructor(...args) {
         super(...args);
 
         // Add event listeners
         this.addListener("ready", this.on_ready);
         this.addListener("messageCreate", this.on_message);
+        this.addListener("interactionCreate", this.on_command_invoke);
+
+        // Add commands
+        this.commands = new Collection();
     }
 
     /**
@@ -23,17 +28,34 @@ export class Reflect extends Client {
      * 
      * @param {Message} message - Message created
      */
-    on_message(message) {
-        if (!message.content.startsWith("echo") && !message.webhookId) return;
+    async on_message(message) {
+        return;
+    }
 
-        message.channel.send({
-            embeds: [
-                new EmbedBuilder()
-                    .setTitle(`Reflection Of Love`)
-                    .setDescription(`Your message: ${message.content.replace("echo", "")}`)
-                    .setColor(Colors.Aqua)
-            ]
-        }).then(() => console.log("Embed sent!"));
+    /**
+     * 
+     * @param {CommandInteraction} interaction 
+     * @returns 
+     */
+    async on_command_invoke(interaction) {
+        if (!interaction.isChatInputCommand()) return;
+
+        const command = this.commands.get(interaction.commandName);
+        if (command) {
+            await command.execute(interaction);
+        }
+    }
+
+    /**
+     * 
+     * @param {Cog} cog 
+     */
+    addCog(cog) {
+        for (let property in cog) {
+            if (property == "_client") continue;
+            console.log(property);
+            this.commands.set(property, cog[property]);
+        }
     }
 
 }
