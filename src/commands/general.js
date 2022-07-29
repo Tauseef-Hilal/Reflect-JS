@@ -118,11 +118,46 @@ export class GeneralCommands extends Cog {
             .setDescription("Create an embedded message"),
 
         /**
-         * Get a user's avatar
+         * Create an embedded message
          * @param {CommandInteraction} interaction 
          */
         async execute(interaction) {
             await interaction.showModal(new EmbedModal());
         }
     }
+
+    icon = {
+        data: new SlashCommandBuilder()
+            .setName("icon")
+            .setDescription("Get server icon"),
+
+        /**
+         * Get server icon
+         * @param {CommandInteraction} interaction 
+         */
+        async execute(interaction) {
+            const color = (
+                await interaction.guild.members.fetch({
+                    user: interaction.user
+                })).displayColor;
+
+            await interaction.reply({
+                embeds: [
+                    new EmbedBuilder()
+                        .setAuthor({
+                            name: interaction.guild.name,
+                            iconURL: interaction.guild.iconURL()
+                        })
+                        .setImage(interaction.guild.iconURL({ size: 4096 }))
+                        .setFooter({
+                            text: interaction.user.username,
+                            iconURL: interaction.user.avatarURL()
+                        })
+                        .setTimestamp()
+                        .setColor(color)
+                ]
+            });
+        }
+    }
+
 }

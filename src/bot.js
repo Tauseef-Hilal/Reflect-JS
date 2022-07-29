@@ -1,6 +1,17 @@
 import { EmbedBuilder } from "@discordjs/builders";
-import { BaseInteraction, Client, Collection, Colors, CommandInteraction, InteractionType, Message, ModalSubmitInteraction } from "discord.js";
+import {
+    Client,
+    Colors, 
+    Message, 
+    Collection, 
+    BaseInteraction,
+    InteractionType, 
+    CommandInteraction, 
+    ModalSubmitInteraction
+} from "discord.js";
+
 import { Cog } from "./utils/cog.js";
+
 
 export class Bot extends Client {
     constructor(...args) {
@@ -76,7 +87,7 @@ export class Bot extends Client {
 
 
         // Send embed
-        await interaction.reply({embeds: [embed]});
+        await interaction.reply({ embeds: [embed] });
     }
 
     /**
