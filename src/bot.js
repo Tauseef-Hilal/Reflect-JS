@@ -1,5 +1,5 @@
 import { EmbedBuilder } from "@discordjs/builders";
-import { Client, Collection, Colors, CommandInteraction, Message } from "discord.js";
+import { BaseInteraction, Client, Collection, Colors, CommandInteraction, InteractionType, Message, ModalSubmitInteraction } from "discord.js";
 import { Cog } from "./utils/cog.js";
 
 export class Bot extends Client {
@@ -9,7 +9,7 @@ export class Bot extends Client {
         // Add event listeners
         this.addListener("ready", this.on_ready);
         this.addListener("messageCreate", this.on_message);
-        this.addListener("interactionCreate", this.on_command_invoke);
+        this.addListener("interactionCreate", this.on_interaction_create);
 
         // Add commands
         this.commands = new Collection();
@@ -33,9 +33,8 @@ export class Bot extends Client {
     }
 
     /**
-     * 
+     * Called when an application command is used
      * @param {CommandInteraction} interaction 
-     * @returns 
      */
     async on_command_invoke(interaction) {
         if (!interaction.isChatInputCommand()) return;
@@ -43,6 +42,54 @@ export class Bot extends Client {
         const command = this.commands.get(interaction.commandName);
         if (command) {
             await command.execute(interaction);
+        }
+    }
+
+    /**
+     * Called when a user submit a modal
+     * @param {ModalSubmitInteraction} interaction 
+     */
+    async on_modal_submit(interaction) {
+        // Get the data entered by the user
+        const title = interaction.fields.getTextInputValue("embedTitle");
+        const desc = interaction.fields.getTextInputValue("embedDescription");
+        const thumb = interaction.fields.getTextInputValue("embedThumbnail");
+        const footer = interaction.fields.getTextInputValue("embedFooter");
+
+        // Create embed
+        let embed = new EmbedBuilder()
+            .setTitle(title)
+            .setColor(Colors.Gold)
+            .setDescription(desc)
+            .setTimestamp();
+
+        if (thumb) {
+            embed = embed.setThumbnail(thumb);
+        }
+
+        if (footer) {
+            embed = embed.setFooter({
+                text: footer,
+                iconURL: interaction.user.avatarURL()
+            });
+        }
+
+
+        // Send embed
+        await interaction.reply({embeds: [embed]});
+    }
+
+    /**
+     * Called when an interaction is created
+     * @param {BaseInteraction} interaction 
+     * @returns 
+     */
+    async on_interaction_create(interaction) {
+        if (interaction.type == InteractionType.ModalSubmit) {
+            this.on_modal_submit(interaction)
+        }
+        else if (interaction.type == InteractionType.ApplicationCommand) {
+            this.on_command_invoke(interaction);
         }
     }
 

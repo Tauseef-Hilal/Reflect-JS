@@ -1,5 +1,67 @@
-import { SlashCommandBuilder, CommandInteraction, Colors, EmbedBuilder } from "discord.js";
+import {
+    SlashCommandBuilder,
+    CommandInteraction,
+    EmbedBuilder,
+    ModalBuilder,
+    ActionRowBuilder,
+    TextInputBuilder,
+    TextInputStyle
+} from "discord.js";
+
+
 import { Cog } from "../utils/cog.js";
+
+
+class EmbedModal extends ModalBuilder {
+    constructor(...args) {
+        super(...args);
+
+        // ---
+        this.setTitle("Embed Builder");
+        this.setCustomId("embedModal");
+
+        // Add components
+        this.addComponents(
+            new ActionRowBuilder()
+                .addComponents(
+                    new TextInputBuilder()
+                        .setLabel("Embed Title")
+                        .setPlaceholder("Embed Title")
+                        .setCustomId("embedTitle")
+                        .setStyle(TextInputStyle.Short)
+                ),
+
+            new ActionRowBuilder()
+                .addComponents(
+                    new TextInputBuilder()
+                        .setLabel("Embed Description")
+                        .setPlaceholder("Embed Description")
+                        .setCustomId("embedDescription")
+                        .setStyle(TextInputStyle.Paragraph)
+                ),
+
+            new ActionRowBuilder()
+                .addComponents(
+                    new TextInputBuilder()
+                        .setLabel("Embed Thumbnail")
+                        .setPlaceholder("Thumbnail URL")
+                        .setCustomId("embedThumbnail")
+                        .setStyle(TextInputStyle.Short)
+                        .setRequired(false)
+                ),
+
+            new ActionRowBuilder()
+                .addComponents(
+                    new TextInputBuilder()
+                        .setLabel("Embed Footer")
+                        .setPlaceholder("Footer Text")
+                        .setCustomId("embedFooter")
+                        .setStyle(TextInputStyle.Short)
+                        .setRequired(false)
+                )
+        )
+    }
+}
 
 export class GeneralCommands extends Cog {
 
@@ -48,5 +110,19 @@ export class GeneralCommands extends Cog {
             });
         }
 
+    }
+
+    embed = {
+        data: new SlashCommandBuilder()
+            .setName("embed")
+            .setDescription("Create an embedded message"),
+
+        /**
+         * Get a user's avatar
+         * @param {CommandInteraction} interaction 
+         */
+        async execute(interaction) {
+            await interaction.showModal(new EmbedModal());
+        }
     }
 }
