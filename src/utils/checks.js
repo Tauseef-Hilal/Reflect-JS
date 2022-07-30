@@ -11,10 +11,12 @@ export async function botUnderMaintenance(interaction) {
         interaction.channel != this.maintenanceChannel
     ) {
         // Send embed
+        const emoji = this.emojiGroup.getEmoji("warning");
+        
         await interaction.reply({
             embeds: [
                 new EmbedBuilder()
-                    .setTitle("Maintenance Break")
+                    .setTitle(`Maintenance Break ${emoji}`)
                     .setDescription(
                         `Reflect is under maintenance. Commands will ` +
                         `work only in \nthe ${this.maintenanceChannel}`

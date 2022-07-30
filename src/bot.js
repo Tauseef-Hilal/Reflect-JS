@@ -13,6 +13,7 @@ import {
 import { Cog } from "./utils/cog.js";
 import { MAINTENANCE_CHANNEL_ID } from "./utils/constants.js";
 import { botHasPermissions, botUnderMaintenance } from "./utils/checks.js";
+import { EmojiGroup } from "./utils/emoji.js";
 
 
 export class Bot extends Client {
@@ -37,6 +38,9 @@ export class Bot extends Client {
     async on_ready() {
         // Show success msg
         console.log(`Logged in as ${this.user.username}`);
+
+        // Instantiate EmojiGroup
+        this.emojiGroup = new EmojiGroup(this);
 
         // Setup Maintenance channel
         this.maintenanceChannel = await this.channels
