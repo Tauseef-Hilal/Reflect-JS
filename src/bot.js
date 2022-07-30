@@ -133,7 +133,10 @@ export class Bot extends Client {
             if (block.split("`").count("") % 2 != 0) continue;
 
             // Substitute codeblock
-            msg = msg.replaceAll(block, BLOCK_ID_FORMAT.replaceAll("{i}", idx++));
+            msg = msg.replaceAll(
+                block,
+                BLOCK_ID_FORMAT.replaceAll("{i}", idx++)
+            );
         }
 
         // Search for emojis
