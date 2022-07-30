@@ -16,14 +16,49 @@ import { botHasPermissions, botUnderMaintenance } from "./utils/checks.js";
 import { EmojiGroup } from "./utils/emoji.js";
 
 
+// JUST PUT THIS HERE :|
+/**
+ * Count the number of occurences of a substring
+ * @param {Any} item 
+ * @returns {Number}
+ */
+Array.prototype.count = function (item) {
+    let counter = 0;
+    let pos = -1;
+    while (~(pos = this.indexOf(item, pos + 1))) {
+        ++counter;
+    }
+
+    return counter;
+}
+
+/**
+ * Count the number of occurences of a substring
+ * @param {String} str 
+ * @returns {Number}
+ */
+String.prototype.count = function (str) {
+    let counter = 0;
+    let pos = -1;
+    while (~(pos = this.indexOf(str, pos + 1))) {
+        ++counter;
+    }
+
+    return counter;
+}
+
+
 export class Bot extends Client {
     constructor(...args) {
         super(...args);
 
         // Add event listeners
-        this.addListener("ready", this.on_ready);
-        this.addListener("messageCreate", this.on_message);
-        this.addListener("interactionCreate", this.on_interaction_create);
+        this.addListener("ready", this.onReady);
+        this.addListener("messageCreate", this.onMessage);
+        this.addListener("interactionCreate", this.onInteractionCreate);
+        this.addListener("emojiCreate", this.onEmojiEvent);
+        this.addListener("emojiDelete", this.onEmojiEvent);
+        this.addListener("emojiUpdate", this.onEmojiEvent);
 
         // Add commands
         this._commands = new Collection();
@@ -35,7 +70,7 @@ export class Bot extends Client {
     /**
      * Called when the bot logs in
      */
-    async on_ready() {
+    async onReady() {
         // Show success msg
         console.log(`Logged in as ${this.user.username}`);
 
@@ -48,19 +83,161 @@ export class Bot extends Client {
     }
 
     /**
+     * Called when en Emoji event is fired
+     */
+    onEmojiEvent() {
+        this.emojiGroup._updateEmojis();
+    }
+
+    /**
      * Called when a message is sent in the server
      * 
      * @param {Message} message - Message created
      */
-    async on_message(message) {
-        return;
+    async onMessage(message) {
+
+        // AEWN: Animated Emojis Without Nitro
+        if (message.content.count(":") > 1 && !message.webhookId) {
+            this._animatedEmojis(message);
+        }
+
+    }
+
+    /**
+     * 
+     * @param {Message} message 
+     */
+    async _animatedEmojis(message) {
+        let emoji;
+        let processedCount = 0;
+        // Insert space between two :: and ><
+        let msg = message.content
+        while (msg.includes("::")) {
+            msg = msg.replaceAll("::", ": :")
+        }
+
+        while (msg.includes("><")) {
+            msg = msg.replaceAll("><", "> <")
+        }
+
+        // Remove codeblocks from message
+        let codeblocks = new Set();
+        for (let item of msg.matchAll(/(`{1,3}.+?`{1,3})+/gs)) {
+            codeblocks.add(item[0]);
+        }
+
+        const BLOCK_ID_FORMAT = "<CodeBlock => @Index: {i}>";
+
+        let idx = 0;
+        for (let block of codeblocks) {
+            if (block.split("`").count("") % 2 != 0) continue;
+
+            // Substitute codeblock
+            msg = msg.replaceAll(block, BLOCK_ID_FORMAT.replaceAll("{i}", idx++));
+        }
+
+        // Search for emojis
+        let emojis = new Set();
+        for (let item of msg.matchAll(/(:[\w\-~]*:)+/g)) {
+            emojis.add(item[0]);
+        }
+
+        let processedEmojis = new Map();
+        for (let emoji of msg.matchAll(/(<a?:\w+:\d+>)+/g)) {
+            processedEmojis.set(`:${emoji[0].split(":")[1]}:`, true)
+        }
+
+        // Return if all emojis are already processed
+        if (emojis.size - processedEmojis.size == 0) return;
+
+        for (let word of emojis) {
+            // Skip if already processed
+            if (processedEmojis.has(word)) continue;
+
+            // Get emoji
+            emoji = this.emojiGroup.getEmoji(
+                word.slice(1, -1),
+                message.guild.id
+            )
+
+            // Skip if not a valid emoji
+            if (!emoji) continue;
+
+            // Replace the word by its emoji
+            msg = msg.replaceAll(word, emoji.toString());
+            ++processedCount;
+        }
+
+        // Return for no emoji
+        if (!processedCount) return;
+
+        // Add codeblocks back to the message
+        idx = 0;
+        for (let block of codeblocks) {
+            msg = msg.replaceAll(
+                BLOCK_ID_FORMAT.replaceAll("{i}", idx++),
+                block
+            );
+        }
+
+        // Send webhook
+        try {
+            await this._sendWebhook(message, msg)
+
+            // Delete the original msg
+            await message.delete()
+
+        } catch (err) {
+            console.error(err)
+            return;
+        }
+
+    }
+
+    /**
+     * Send webhook
+     * @param {Message} message Original message
+     * @param {String} mod_msg Modifies message content
+     */
+    async _sendWebhook(message, mod_msg = "") {
+
+        // Get all webhooks currently in the msg channel
+        let webhooks = await message.channel.fetchWebhooks();
+
+        // Check if there exists a webhook with id
+        // equal to bot's id. In that case, break
+        let webhook;
+        for (webhook of webhooks.values()) {
+            if (webhook.owner.id == this.user.id) {
+                break;
+            }
+            webhook = null;
+        }
+
+        // Otherwise
+        if (!webhook) {
+            // Create a new webhook for the channel
+            webhook = await message.channel.createWebhook({
+                name: "Reflect-JS",
+                avatar: this.user.avatarURL(),
+                reason: "Animated Emojis: Free Usage",
+            })
+        }
+
+        // Send webhook to the channel with username as the name
+        // of msg author and avatar as msg author's avatar
+        await webhook.send({
+            content: mod_msg ? mod_msg : message.content,
+            username: message.author.username,
+            avatarURL: message.author.avatarURL()
+        });
     }
 
     /**
      * Called when an application command is used
      * @param {CommandInteraction} interaction 
      */
-    async on_command_invoke(interaction) {
+    async onCommandInvoke(interaction) {
         if (!interaction.isChatInputCommand()) return;
 
         const command = this._commands.get(interaction.commandName);
@@ -73,7 +250,7 @@ export class Bot extends Client {
      * Called when a user submit a modal
      * @param {ModalSubmitInteraction} interaction 
      */
-    async on_modal_submit(interaction) {
+    async onModalSubmit(interaction) {
         // Get the data entered by the user
         const title = interaction.fields.getTextInputValue("embedTitle");
         const desc = interaction.fields.getTextInputValue("embedDescription");
@@ -108,12 +285,12 @@ export class Bot extends Client {
      * @param {BaseInteraction} interaction 
      * @returns 
      */
-    async on_interaction_create(interaction) {
+    async onInteractionCreate(interaction) {
         if (interaction.type == InteractionType.ModalSubmit) {
-            this.on_modal_submit(interaction)
+            this.onModalSubmit(interaction)
         }
         else if (interaction.type == InteractionType.ApplicationCommand) {
-            this.commandHandler(this.on_command_invoke, interaction)
+            this.commandHandler(this.onCommandInvoke, interaction)
         }
     }
 
@@ -134,7 +311,6 @@ export class Bot extends Client {
     }
 
     /**
-     * 
      * @param {Cog} commandGroup 
      */
     addCog(commandGroup) {

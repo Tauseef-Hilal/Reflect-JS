@@ -1,4 +1,4 @@
-import { GuildEmoji } from "discord.js";
+import { Collection, GuildEmoji } from "discord.js";
 import { Bot } from "../bot.js";
 
 
@@ -8,23 +8,38 @@ export class EmojiGroup {
      */
     constructor(client) {
         this._bot = client;
-
-        for (let emoji of this._bot.emojis.cache.values()) {
-            let i = 0;
-            let name = emoji.name;
-            while (name in this) {
-                name = name.split("-")[0] + `-${++i}`;
-            }
-            this[name] = emoji;
-        }
+        this._updateEmojis()
     }
 
     /**
      * Get emoji by name
      * @param {String} name - Emoji name
-     * @returns {GuildEmoji | undefined}, undefined if not found
+     * @param {String} guildId - Guild ID
+     * @returns {GuildEmoji | undefined}, undfined if not found
      */
-    getEmoji(name) {
-        return this[name];
+    getEmoji(name, guildId) {
+        if (this._emojis.has(guildId) && this._emojis.get(guildId).has(name)) {
+            return this._emojis.get(guildId).get(name);
+        }
+
+        return Array
+            .from(this._emojis.values())
+            .filter(col => col.has(name))[0]
+            ?.get(name)
+    }
+
+    /**
+     * Update emojis
+     */
+    _updateEmojis() {
+        this._emojis = new Collection();
+
+        for (let emoji of this._bot.emojis.cache.values()) {
+            if (!this._emojis.has(emoji.guild.id)) {
+                this._emojis.set(emoji.guild.id, new Collection());
+            }
+
+            this._emojis.get(emoji.guild.id).set(emoji.name, emoji);
+        }
     }
 }
