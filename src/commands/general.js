@@ -5,7 +5,8 @@ import {
     ModalBuilder,
     ActionRowBuilder,
     TextInputBuilder,
-    TextInputStyle
+    TextInputStyle,
+    PermissionsBitField,
 } from "discord.js";
 
 

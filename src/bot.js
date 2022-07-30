@@ -1,16 +1,18 @@
 import { EmbedBuilder } from "@discordjs/builders";
 import {
     Client,
-    Colors, 
-    Message, 
-    Collection, 
+    Colors,
+    Message,
+    Collection,
     BaseInteraction,
-    InteractionType, 
-    CommandInteraction, 
+    InteractionType,
+    CommandInteraction,
     ModalSubmitInteraction
 } from "discord.js";
 
 import { Cog } from "./utils/cog.js";
+import { MAINTENANCE_CHANNEL_ID } from "./utils/constants.js";
+import { botHasPermissions, botUnderMaintenance } from "./utils/checks.js";
 
 
 export class Bot extends Client {
@@ -23,15 +25,22 @@ export class Bot extends Client {
         this.addListener("interactionCreate", this.on_interaction_create);
 
         // Add commands
-        this.commands = new Collection();
+        this._commands = new Collection();
+
+        // --
+        this.maintenanceMode = false;
     }
 
     /**
      * Called when the bot logs in
      */
-    on_ready() {
-
+    async on_ready() {
+        // Show success msg
         console.log(`Logged in as ${this.user.username}`);
+
+        // Setup Maintenance channel
+        this.maintenanceChannel = await this.channels
+            .fetch(MAINTENANCE_CHANNEL_ID);
     }
 
     /**
@@ -50,7 +59,7 @@ export class Bot extends Client {
     async on_command_invoke(interaction) {
         if (!interaction.isChatInputCommand()) return;
 
-        const command = this.commands.get(interaction.commandName);
+        const command = this._commands.get(interaction.commandName);
         if (command) {
             await command.execute(interaction);
         }
@@ -100,19 +109,34 @@ export class Bot extends Client {
             this.on_modal_submit(interaction)
         }
         else if (interaction.type == InteractionType.ApplicationCommand) {
-            this.on_command_invoke(interaction);
+            this.commandHandler(this.on_command_invoke, interaction)
         }
     }
 
     /**
-     * 
-     * @param {Cog} cog 
+     * Check for maintenance and permissions
+     * @param {Function} func - Command execution function
+     * @param {CommandInteraction} interaction - Command interaction
      */
-    addCog(cog) {
-        for (let property in cog) {
-            if (property == "_client") continue;
-            console.log(property);
-            this.commands.set(property, cog[property]);
+    async commandHandler(func, interaction) {
+        // Check for maintenance mode
+        if (await botUnderMaintenance.call(this, interaction)) return;
+
+        // Check for bot permissions
+        if (!await botHasPermissions.call(this, interaction)) return;
+
+        // Execute command
+        return func.call(this, interaction);
+    }
+
+    /**
+     * 
+     * @param {Cog} commandGroup 
+     */
+    addCog(commandGroup) {
+        for (let command of commandGroup) {
+            console.log(command);
+            this._commands.set(command, commandGroup[command]);
         }
     }
 

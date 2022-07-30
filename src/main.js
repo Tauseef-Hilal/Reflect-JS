@@ -36,7 +36,7 @@ export async function main() {
     BOT.addCog(new GeneralCommands(BOT));
 
     const commands = Array.from(
-        BOT.commands.values()
+        BOT._commands.values()
     ).map(command => command.data.toJSON());
 
     // REST
@@ -44,9 +44,8 @@ export async function main() {
 
     try {
         await rest.put(
-            Routes.applicationGuildCommands(
-                process.env.CLIENT_ID,
-                "923523227098152960"
+            Routes.applicationCommands(
+                process.env.CLIENT_ID
             ),
             { body: commands }
         );
