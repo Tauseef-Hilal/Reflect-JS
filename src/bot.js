@@ -110,6 +110,7 @@ export class Bot extends Client {
     async _animatedEmojis(message) {
         let emoji;
         let processedCount = 0;
+
         // Insert space between two :: and ><
         let msg = message.content
         while (msg.includes("::")) {
@@ -127,7 +128,7 @@ export class Bot extends Client {
         }
 
         const BLOCK_ID_FORMAT = "<CodeBlock => @Index: {i}>";
-
+        
         let idx = 0;
         for (let block of codeblocks) {
             if (block.split("`").count("") % 2 != 0) continue;
@@ -200,7 +201,7 @@ export class Bot extends Client {
     /**
      * Send webhook
      * @param {Message} message Original message
-     * @param {String} mod_msg Modifies message content
+     * @param {String} mod_msg Modified message content
      */
     async _sendWebhook(message, mod_msg = "") {
 
@@ -245,7 +246,7 @@ export class Bot extends Client {
 
         const command = this._commands.get(interaction.commandName);
         if (command) {
-            await command.execute(interaction);
+            this.commandHandler(command.execute, interaction);
         }
     }
 
@@ -293,7 +294,7 @@ export class Bot extends Client {
             this.onModalSubmit(interaction)
         }
         else if (interaction.type == InteractionType.ApplicationCommand) {
-            this.commandHandler(this.onCommandInvoke, interaction)
+            this.onCommandInvoke(interaction);
         }
     }
 

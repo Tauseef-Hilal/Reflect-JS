@@ -46,10 +46,12 @@ export async function botHasPermissions(interaction) {
     
     // Check bot permissions
     if (!interaction.guild.members.me.permissions.has(perms)) {
+        const emoji = this.emojiGroup.getEmoji("red_cross");
+        
         interaction.reply({
             embeds: [
                 new EmbedBuilder()
-                    .setTitle("Permission Error")
+                    .setTitle(`Permission Error ${emoji}`)
                     .setDescription(
                         `I do not have the required permissions ` +
                         `to run this command.`

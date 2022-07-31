@@ -16,6 +16,9 @@ export const FAREWELL_MESSAGES = [
     "Bye **{}**. Sorry to see you go."
 ];
 
+// ICODE
+export const ICODE_GUILD_ID = "923523227098152960";
+
 // Channel IDs
 export const MAINTENANCE_CHANNEL_ID = "955540726513565756";
 
@@ -25,3 +28,5 @@ export const ICODIAN_ROLE_ID = "956176391735496764";
 
 // User IDs
 export const DISBOARD_ID = "302050872383242240";
+export const OWNER_ID = "923252972471853096";
+

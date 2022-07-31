@@ -1,5 +1,6 @@
 import { Collection, GuildEmoji } from "discord.js";
 import { Bot } from "../bot.js";
+import { ICODE_GUILD_ID } from "./constants.js";
 
 
 export class EmojiGroup {
@@ -17,7 +18,7 @@ export class EmojiGroup {
      * @param {String} guildId - Guild ID
      * @returns {GuildEmoji | undefined}, undfined if not found
      */
-    getEmoji(name, guildId) {
+    getEmoji(name, guildId=ICODE_GUILD_ID) {
         if (this._emojis.has(guildId) && this._emojis.get(guildId).has(name)) {
             return this._emojis.get(guildId).get(name);
         }

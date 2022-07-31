@@ -5,6 +5,8 @@ import * as dotenv from 'dotenv'
 // ---
 import { Bot } from "./bot.js";
 import { GeneralCommands } from "./commands/general.js";
+import { MiscellaneousCommands } from "./commands/miscellaneous.js";
+import { ICODE_GUILD_ID } from "./utils/constants.js";
 
 // Load environment variables
 dotenv.config()
@@ -34,6 +36,7 @@ export async function main() {
 
     // Add commands
     BOT.addCog(new GeneralCommands(BOT));
+    BOT.addCog(new MiscellaneousCommands(BOT));
 
     const commands = Array.from(
         BOT._commands.values()
@@ -44,8 +47,9 @@ export async function main() {
 
     try {
         await rest.put(
-            Routes.applicationCommands(
-                process.env.CLIENT_ID
+            Routes.applicationGuildCommands(
+                process.env.CLIENT_ID,
+                ICODE_GUILD_ID
             ),
             { body: commands }
         );
